@@ -1,0 +1,21 @@
+#!/usr/bin/make -f
+
+%:
+	dh $@
+
+override_dh_auto_install:
+	# Install sources file
+	install -D -m 644 etc/apt/sources.list.d/guideos.sources \
+		$(CURDIR)/debian/guideos-keyring/etc/apt/sources.list.d/guideos.sources
+	
+	# Install apt configuration
+	install -D -m 644 etc/apt/apt.conf.d/90guideos-modernize-sources-notice \
+		$(CURDIR)/debian/guideos-keyring/etc/apt/apt.conf.d/90guideos-modernize-sources-notice
+	
+	# Install GPG keys
+	install -D -m 644 usr/share/keyrings/home_guideos_cinnamon-trixie.gpg \
+		$(CURDIR)/debian/guideos-keyring/usr/share/keyrings/home_guideos_cinnamon-trixie.gpg
+	install -D -m 644 usr/share/keyrings/home_guideos_trixie.gpg \
+		$(CURDIR)/debian/guideos-keyring/usr/share/keyrings/home_guideos_trixie.gpg
+	install -D -m 644 usr/share/keyrings/home_guideos_universe.gpg \
+		$(CURDIR)/debian/guideos-keyring/usr/share/keyrings/home_guideos_universe.gpg

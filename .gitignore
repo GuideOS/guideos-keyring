@@ -1,0 +1,17 @@
+# Build artifacts
+debian/guideos-keyring/
+debian/.debhelper/
+debian/files
+debian/debhelper-build-stamp
+debian/tmp/
+
+# Package files
+*.deb
+*.dsc
+*.tar.xz
+*.changes
+*.buildinfo
+
+# Backup files
+*~
+*.bak

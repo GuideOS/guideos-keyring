@@ -1,0 +1,74 @@
+name: Build and Release
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y debhelper-compat curl gnupg build-essential
+    
+    - name: Download GPG keys
+      run: |
+        make update-keys || true
+    
+    - name: Build package
+      run: |
+        dpkg-buildpackage -b --no-sign
+    
+    - name: List built packages
+      run: |
+        ls -la ../guideos-keyring_*.deb || true
+        ls -la ../*.deb || true
+    
+    - name: Upload package artifact
+      uses: actions/upload-artifact@v4
+      with:
+        name: guideos-keyring-deb
+        path: ../guideos-keyring_*.deb
+        if-no-files-found: error
+    
+    - name: Test installation
+      run: |
+        sudo dpkg -i ../guideos-keyring_*.deb || true
+        sudo apt-get install -f -y || true
+        # Verify files are installed
+        test -f /etc/apt/sources.list.d/guideos.sources
+        test -f /usr/share/keyrings/home_guideos_cinnamon-trixie.gpg
+        test -f /usr/share/keyrings/home_guideos_trixie.gpg  
+        test -f /usr/share/keyrings/home_guideos_universe.gpg
+        echo "Package installation test passed!"
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download artifact
+      uses: actions/download-artifact@v4
+      with:
+        name: guideos-keyring-deb
+    
+    - name: Create Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: guideos-keyring_*.deb
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

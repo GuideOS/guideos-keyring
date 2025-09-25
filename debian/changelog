@@ -1,0 +1,12 @@
+guideos-keyring (1.0-1) trixie; urgency=medium
+
+  * Initial release
+  * Add GuideOS repository configuration and GPG keys
+  * Support for GuideOS Cinnamon, Trixie and Universe repositories
+  * Use modern deb822 sources format
+  * Include APT configuration to suppress modernize-sources warnings
+  * Automatically remove old .list format repository files
+  * Automatically migrate GPG keys from old to new location
+  * Provide detailed installation feedback and status messages
+
+ -- Actionschnitzel <actionschnitzel@guideos.de>  Thu, 25 Sep 2025 12:00:00 +0200

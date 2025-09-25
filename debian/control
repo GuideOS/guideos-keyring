@@ -1,0 +1,21 @@
+Source: guideos-keyring
+Section: misc
+Priority: optional
+Maintainer: Actionschnitzel <actionschnitzel@guideos.de>
+Build-Depends: debhelper-compat (= 13)
+Standards-Version: 4.6.0
+Homepage: https://guideos.org
+
+Package: guideos-keyring
+Architecture: all
+Depends: ${misc:Depends}, gnupg
+Description: GuideOS repository keyring and sources
+ This package contains the GPG keys and APT sources configuration
+ for the GuideOS repositories. It provides access to:
+ .
+  * GuideOS Cinnamon packages for Trixie
+  * GuideOS Trixie packages
+  * GuideOS Universe packages
+ .
+ The package automatically configures the system to trust and use
+ the GuideOS package repositories.

@@ -1,0 +1,43 @@
+#!/bin/bash
+
+set -e
+
+case "$1" in
+    remove)
+        # Clean up apt cache after removal
+        if command -v apt-get >/dev/null 2>&1; then
+            echo "Updating APT cache after GuideOS keyring removal..."
+            apt-get update || true
+        fi
+        ;;
+    
+    purge)
+        # Remove any leftover files on purge
+        echo "Purging all GuideOS repository configurations..."
+        
+        # Remove new format files
+        rm -f /etc/apt/sources.list.d/guideos.sources 2>/dev/null || true
+        rm -f /etc/apt/apt.conf.d/90guideos-modernize-sources-notice 2>/dev/null || true
+        rm -f /usr/share/keyrings/home_guideos_*.gpg 2>/dev/null || true
+        
+        # Remove any remaining old format files (just in case)
+        rm -f /etc/apt/sources.list.d/home:guideos:*.list 2>/dev/null || true
+        rm -f /etc/apt/trusted.gpg.d/home_guideos_*.gpg 2>/dev/null || true
+        
+        if command -v apt-get >/dev/null 2>&1; then
+            apt-get update || true
+        fi
+        ;;
+    
+    upgrade|failed-upgrade|abort-install|abort-upgrade|disappear)
+        ;;
+    
+    *)
+        echo "postrm called with unknown argument \`$1'" >&2
+        exit 1
+        ;;
+esac
+
+#DEBHELPER#
+
+exit 0

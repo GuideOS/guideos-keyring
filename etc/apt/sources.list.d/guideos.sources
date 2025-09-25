@@ -1,0 +1,20 @@
+Types: deb
+Enabled: yes
+URIs: http://download.opensuse.org/repositories/home:/guideos:/cinnamon-trixie/Debian_Testing/
+Suites: /
+Components: 
+Signed-By: /usr/share/keyrings/home_guideos_cinnamon-trixie.gpg
+
+Types: deb
+Enabled: yes
+URIs: http://download.opensuse.org/repositories/home:/guideos:/trixie/Debian_Testing/
+Suites: /
+Components: 
+Signed-By: /usr/share/keyrings/home_guideos_trixie.gpg
+
+Types: deb
+Enabled: yes
+URIs: http://download.opensuse.org/repositories/home:/guideos:/universe/Debian_Testing/
+Suites: /
+Components: 
+Signed-By: /usr/share/keyrings/home_guideos_universe.gpg
