@@ -19,11 +19,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y curl gnupg osc git-buildpackage
-    
-    - name: Download GPG keys
-      run: |
-        make update-keys || true
+        sudo apt-get install -y osc git-buildpackage
     
     - name: Create source package
       run: |

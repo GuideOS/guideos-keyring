@@ -17,11 +17,7 @@ jobs:
     - name: Install dependencies
       run: |
         sudo apt-get update
-        sudo apt-get install -y debhelper-compat curl gnupg build-essential
-    
-    - name: Download GPG keys
-      run: |
-        make update-keys || true
+        sudo apt-get install -y debhelper-compat build-essential
     
     - name: Build package
       run: |
