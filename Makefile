@@ -10,12 +10,19 @@ build-signed:
 
 # Clean build artifacts
 clean:
-	dh clean
 	rm -f ../guideos-keyring_*.deb
 	rm -f ../guideos-keyring_*.dsc
 	rm -f ../guideos-keyring_*.tar.xz
 	rm -f ../guideos-keyring_*.changes
 	rm -f ../guideos-keyring_*.buildinfo
+	rm -rf debian/.debhelper/
+	rm -f debian/files
+	rm -f debian/debhelper-build-stamp
+	rm -f debian/guideos-keyring.substvars
+
+# Clean using debhelper (use this for proper debian cleaning)
+dh-clean:
+	dh clean
 
 # Install build dependencies
 deps:
