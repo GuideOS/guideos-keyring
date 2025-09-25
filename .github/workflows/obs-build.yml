@@ -1,0 +1,178 @@
+name: OpenBuild Service Integration
+
+on:
+  push:
+    branches: [ main, master ]
+    tags: [ 'v*' ]
+  pull_request:
+    branches: [ main, master ]
+
+jobs:
+  prepare-source:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+      with:
+        fetch-depth: 0
+    
+    - name: Install dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y curl gnupg osc git-buildpackage
+    
+    - name: Download GPG keys
+      run: |
+        make update-keys || true
+    
+    - name: Create source package
+      run: |
+        # Create tarball for OBS
+        VERSION=$(dpkg-parsechangelog -S Version | cut -d- -f1)
+        git archive --format=tar.gz --prefix=guideos-keyring-${VERSION}/ HEAD > guideos-keyring_${VERSION}.orig.tar.gz
+        echo "VERSION=${VERSION}" >> $GITHUB_ENV
+    
+    - name: Upload source artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: obs-source-package
+        path: |
+          guideos-keyring_*.orig.tar.gz
+          debian/
+        retention-days: 7
+
+  obs-trigger:
+    needs: prepare-source
+    runs-on: ubuntu-latest
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/master' || startsWith(github.ref, 'refs/tags/v'))
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download source artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: obs-source-package
+    
+    - name: Setup OBS credentials
+      run: |
+        mkdir -p ~/.config/osc
+        cat > ~/.config/osc/oscrc << EOF
+        [general]
+        apiurl = ${{ secrets.OBS_API_URL || 'https://api.opensuse.org' }}
+        
+        [${{ secrets.OBS_API_URL || 'https://api.opensuse.org' }}]
+        user = ${{ secrets.OBS_USERNAME }}
+        pass = ${{ secrets.OBS_PASSWORD }}
+        EOF
+      env:
+        OBS_USERNAME: ${{ secrets.OBS_USERNAME }}
+        OBS_PASSWORD: ${{ secrets.OBS_PASSWORD }}
+    
+    - name: Checkout OBS package
+      run: |
+        osc co ${{ secrets.OBS_PROJECT }}/guideos-keyring || osc meta pkg ${{ secrets.OBS_PROJECT }} guideos-keyring --create
+        cd ${{ secrets.OBS_PROJECT }}/guideos-keyring
+      env:
+        OBS_PROJECT: ${{ secrets.OBS_PROJECT }}
+    
+    - name: Update OBS package
+      run: |
+        cd ${{ secrets.OBS_PROJECT }}/guideos-keyring
+        
+        # Copy new sources
+        cp ../../guideos-keyring_*.orig.tar.gz .
+        cp -r ../../debian .
+        
+        # Add files to OBS
+        osc add *.tar.gz debian/* || true
+        
+        # Create _service file for automatic tarball generation (optional)
+        cat > _service << EOF
+        <services>
+          <service name="obs_scm">
+            <param name="url">https://github.com/GuideOS/guideos-keyring.git</param>
+            <param name="scm">git</param>
+            <param name="revision">${{ github.sha }}</param>
+          </service>
+          <service name="tar" mode="buildtime"/>
+          <service name="recompress" mode="buildtime">
+            <param name="file">*.tar</param>
+            <param name="compression">gz</param>
+          </service>
+        </services>
+        EOF
+        
+        osc add _service || true
+        
+        # Commit changes
+        osc ci -m "Update from GitHub: ${{ github.event.head_commit.message || github.ref }}"
+      env:
+        OBS_PROJECT: ${{ secrets.OBS_PROJECT }}
+
+  local-test-build:
+    needs: prepare-source
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download source artifacts
+      uses: actions/download-artifact@v4
+      with:
+        name: obs-source-package
+    
+    - name: Install build dependencies
+      run: |
+        sudo apt-get update
+        sudo apt-get install -y debhelper-compat build-essential devscripts
+    
+    - name: Test local build
+      run: |
+        dpkg-buildpackage -b --no-sign
+    
+    - name: Test package installation
+      run: |
+        sudo dpkg -i ../guideos-keyring_*.deb || true
+        sudo apt-get install -f -y || true
+        # Verify files are installed
+        test -f /etc/apt/sources.list.d/guideos.sources
+        test -f /usr/share/keyrings/home_guideos_cinnamon-trixie.gpg
+        test -f /usr/share/keyrings/home_guideos_trixie.gpg  
+        test -f /usr/share/keyrings/home_guideos_universe.gpg
+        echo "Package installation test passed!"
+    
+    - name: Upload test packages
+      uses: actions/upload-artifact@v4
+      with:
+        name: test-built-packages
+        path: ../guideos-keyring_*.deb
+        retention-days: 7
+
+  github-release:
+    needs: [obs-trigger, local-test-build]
+    runs-on: ubuntu-latest
+    if: startsWith(github.ref, 'refs/tags/v')
+    
+    steps:
+    - uses: actions/checkout@v4
+    
+    - name: Download test packages
+      uses: actions/download-artifact@v4
+      with:
+        name: test-built-packages
+    
+    - name: Create GitHub Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: guideos-keyring_*.deb
+        generate_release_notes: true
+        draft: false
+        prerelease: false
+        body: |
+          This release has been automatically built and is also available through the OpenBuild Service.
+          
+          **OBS Project**: ${{ secrets.OBS_PROJECT }}
+          **Build Status**: Check the OBS web interface for build results across different distributions.
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
