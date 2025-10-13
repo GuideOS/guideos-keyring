@@ -1,4 +1,4 @@
-guideos-keyring (1.0-1) trixie; urgency=medium
+guideos-keyring (1.0-2) trixie; urgency=medium
 
   * Initial release
   * Add GuideOS repository configuration and GPG keys
