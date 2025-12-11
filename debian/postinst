@@ -1,74 +1,32 @@
-#!/bin/bash
-
+#!/bin/sh
 set -e
 
 case "$1" in
     configure)
-        echo "Configuring GuideOS keyring..."
+        # Remove old keyring files if they exist
+        rm -f /usr/share/keyrings/home_guideos_cinnamon-trixie.gpg
+        rm -f /usr/share/keyrings/home_guideos_trixie.gpg
+        rm -f /usr/share/keyrings/home_guideos_universe.gpg
         
-        # Check and remove old repository files
-        echo "Checking for old GuideOS repository configurations..."
+        # Remove old sources.list files that reference the old keyrings
+        find /etc/apt/sources.list.d/ -type f \( -name "*guideos*.list" -o -name "*home_guideos*.list" \) -delete 2>/dev/null || true
         
-        CLEANUP_NEEDED=0
-        
-        # Remove old .list files if they exist
-        OLD_LISTS=(
-            "/etc/apt/sources.list.d/home:guideos:cinnamon-trixie.list"
-            "/etc/apt/sources.list.d/home:guideos:trixie.list" 
-            "/etc/apt/sources.list.d/home:guideos:universe.list"
-        )
-        
-        for list_file in "${OLD_LISTS[@]}"; do
-            if [ -f "$list_file" ]; then
-                echo "  Removing old sources list: $(basename "$list_file")"
-                rm -f "$list_file" || true
-                CLEANUP_NEEDED=1
+        # Remove old sources files with old Signed-By paths
+        for file in /etc/apt/sources.list.d/*.sources; do
+            if [ -f "$file" ] && grep -q "/usr/share/keyrings/home_guideos" "$file" 2>/dev/null; then
+                rm -f "$file"
             fi
         done
         
-        # Remove old GPG files if they exist (old format/location)
-        OLD_GPGS=(
-            "/etc/apt/trusted.gpg.d/home_guideos_cinnamon-trixie.gpg"
-            "/etc/apt/trusted.gpg.d/home_guideos_trixie.gpg"
-            "/etc/apt/trusted.gpg.d/home_guideos_universe.gpg"
-        )
-        
-        for gpg_file in "${OLD_GPGS[@]}"; do
-            if [ -f "$gpg_file" ]; then
-                echo "  Removing old GPG key: $(basename "$gpg_file")"
-                rm -f "$gpg_file" || true
-                CLEANUP_NEEDED=1
-            fi
-        done
-        
-        if [ "$CLEANUP_NEEDED" = "1" ]; then
-            echo "  Migration from old repository format completed!"
-        else
-            echo "  No old repository files found."
-        fi
-        
-        # Verify new configuration is in place
-        if [ -f "/etc/apt/sources.list.d/guideos.sources" ]; then
-            echo "GuideOS repository sources installed successfully."
-        else
-            echo "Warning: GuideOS sources file not found!"
-        fi
-        
-        if [ -f "/usr/share/keyrings/home_guideos_cinnamon-trixie.gpg" ]; then
-            echo "GuideOS GPG keys installed successfully."
-        else
-            echo "Warning: GuideOS GPG keys not found!"
-        fi
-        
-        # Update apt cache after installation and cleanup
-        if command -v apt-get >/dev/null 2>&1; then
-            echo "Updating APT package cache..."
-            apt-get update || true
-            echo "GuideOS keyring configuration complete!"
+        # Update apt cache to recognize the new repository
+        if [ -x /usr/bin/apt-get ]; then
+            echo "GuideOS keyring installed. Old configuration cleaned up."
+            echo "Run 'apt update' to refresh package lists."
         fi
         ;;
     
     abort-upgrade|abort-remove|abort-deconfigure)
+        # Nothing to do
         ;;
     
     *)

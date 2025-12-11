@@ -1,3 +1,14 @@
+guideos-keyring (1.0-3) trixie; urgency=medium
+
+  * Simplified GPG key management
+  * Install GPG key directly to /etc/apt/trusted.gpg.d/
+  * Use ASCII-armored key format (.asc) for better compatibility
+  * Remove obsolete keyring files
+  * Add proper postinst and postrm maintainer scripts
+  * Clean up configuration files on package purge
+
+ -- Actionschnitzel <actionschnitzel@guideos.de>  Thu, 12 Dec 2025 12:00:00 +0100
+
 guideos-keyring (1.0-2) trixie; urgency=medium
 
   * Initial release

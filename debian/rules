@@ -12,10 +12,6 @@ override_dh_auto_install:
 	install -D -m 644 etc/apt/apt.conf.d/90guideos-modernize-sources-notice \
 		$(CURDIR)/debian/guideos-keyring/etc/apt/apt.conf.d/90guideos-modernize-sources-notice
 	
-	# Install GPG keys
-	install -D -m 644 usr/share/keyrings/home_guideos_cinnamon-trixie.gpg \
-		$(CURDIR)/debian/guideos-keyring/usr/share/keyrings/home_guideos_cinnamon-trixie.gpg
-	install -D -m 644 usr/share/keyrings/home_guideos_trixie.gpg \
-		$(CURDIR)/debian/guideos-keyring/usr/share/keyrings/home_guideos_trixie.gpg
-	install -D -m 644 usr/share/keyrings/home_guideos_universe.gpg \
-		$(CURDIR)/debian/guideos-keyring/usr/share/keyrings/home_guideos_universe.gpg
+	# Install GPG key to trusted.gpg.d
+	install -D -m 644 etc/apt/trusted.gpg.d/guideos.asc \
+		$(CURDIR)/debian/guideos-keyring/etc/apt/trusted.gpg.d/guideos.asc
